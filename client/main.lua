@@ -21,7 +21,7 @@ RegisterNUICallback('GetCar', function(data) --- Fatura versiyon
         for k, v in pairs(fatura) do
             invoicesamount = v.amount
         end
-        if invoicesamount < 250 then
+        if invoicesamount < 250 then ------ 250$ dan yüksek faturası varsa vale kullanamaz
             yolda = true
             QBCore.Functions.TriggerCallback('qb-phone:server:GetVehicleByPlate', function(result)
                 for k, v in pairs(result) do
@@ -31,7 +31,6 @@ RegisterNUICallback('GetCar', function(data) --- Fatura versiyon
                         Citizen.Wait(8000)
                         QBCore.Functions.SpawnVehicle(v.vehicle, function(veh)
                             QBCore.Functions.TriggerCallback('qb-garage:server:GetVehicleProperties', function(properties)
-                            
                                 QBCore.Functions.SetVehicleProperties(veh, properties)
                                 SetVehicleNumberPlateText(veh, v.plate)
                                 exports['LegacyFuel']:SetFuel(veh, v.fuel)
@@ -62,7 +61,7 @@ RegisterNUICallback('GetCar', function(data) --- Fatura versiyon
             end, plaka)  
         else
             --QBCore.Functions.Notify("1000$ Dolardan Fazla Ödenmemiş Faturan Var Önce Onları Öde", "error")
-            TriggerEvent('qb-phone:client:GarageNotify', "1000$ Dolardan Fazla Ödenmemiş Faturan Var Önce Onları Öde", 3000)
+            TriggerEvent('qb-phone:client:GarageNotify', "250$ Dolardan Fazla Ödenmemiş Faturan Var Önce Onları Öde", 3000)
         end
     end)
 end)
