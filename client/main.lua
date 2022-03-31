@@ -1,34 +1,25 @@
-------- LYZ Valet
-
 local yolda = false
 local ValetTime = false
 
-RegisterNUICallback('GetCar', function(data) --- Fatura versiyon
-    local plaka = data.profilepicture
+RegisterNUICallback('GetCar', function(data) 
+    local plaka = data.carplate
     local coords = GetOffsetFromEntityInWorldCoords(PlayerPedId(), 1.5, 5.0, 0.0)
     if yolda then
-        --QBCore.Functions.Notify("Aynı Anda Sadece Bir Vale Hizmetini Kullanabilirsin.", "error", 5000)
         TriggerEvent('qb-phone:client:GarageNotify', "Aynı Anda Sadece Bir Vale Hizmetini Kullanabilirsin.", 2000)
         return
     end
     if ValetTime then
-        --QBCore.Functions.Notify("Bir süre vale hizmetinden yararlanamazsın.", "error", 5000)
         TriggerEvent('qb-phone:client:GarageNotify', "Bir süre vale hizmetinden yararlanamazsın.", 2000)
         return
     end
     QBCore.Functions.TriggerCallback('qb-phone:server:GetInvoicesAll', function(fatura)
-        local invoicesamount = 0
-        for k, v in pairs(fatura) do
-            invoicesamount = v.amount
-        end
-        if invoicesamount < 250 then ------ 250$ dan yüksek faturası varsa vale kullanamaz
+        if fatura < 250 then ------ Total bills
             yolda = true
             QBCore.Functions.TriggerCallback('qb-phone:server:GetVehicleByPlate', function(result)
                 for k, v in pairs(result) do
                     if v.state == 1 then
-                        --QBCore.Functions.Notify("Aracınız valeye verildi yakında burada olur.", "success", 5000)
                         TriggerEvent('qb-phone:client:GarageNotify', "Aracınız valeye verildi yakında burada olur.", 2000)
-                        Citizen.Wait(8000)
+                        Wait(8000)
                         QBCore.Functions.SpawnVehicle(v.vehicle, function(veh)
                             QBCore.Functions.TriggerCallback('qb-garage:server:GetVehicleProperties', function(properties)
                                 QBCore.Functions.SetVehicleProperties(veh, properties)
@@ -44,10 +35,9 @@ RegisterNUICallback('GetCar', function(data) --- Fatura versiyon
                             TriggerServerEvent('qb-phone:server:GiveInvoice')
                         end, {x=coords.x, y=coords.y, z=coords.z, h= heading}, true)
                         ValetTime = true
-                        Citizen.Wait(32000)
+                        Wait(32000)
                         ValetTime = false
                     elseif v.state == 0 then
-                        --QBCore.Functions.Notify("Aracın zaten dışarıda")
                         TriggerEvent('qb-phone:client:GarageNotify', "Aracın zaten dışarıda konumu işaretlendi.", 2000)
                         findVehFromPlateAndLocate(v.plate)
                         yolda = false
@@ -60,28 +50,10 @@ RegisterNUICallback('GetCar', function(data) --- Fatura versiyon
                 end
             end, plaka)  
         else
-            --QBCore.Functions.Notify("1000$ Dolardan Fazla Ödenmemiş Faturan Var Önce Onları Öde", "error")
             TriggerEvent('qb-phone:client:GarageNotify', "250$ Dolardan Fazla Ödenmemiş Faturan Var Önce Onları Öde", 3000)
         end
     end)
 end)
-
-function findVehFromPlateAndLocate(plate)
-
-    local gameVehicles = QBCore.Functions.GetVehicles()
-  
-    for i = 1, #gameVehicles do
-        local vehicle = gameVehicles[i]
-
-        if DoesEntityExist(vehicle) then
-            if GetVehicleNumberPlateText(vehicle) == plate then
-                local vehCoords = GetEntityCoords(vehicle)
-                SetNewWaypoint(vehCoords.x, vehCoords.y)
-                return true
-            end
-        end
-    end
-end
 
 RegisterNetEvent('qb-phone:client:GarageNotify', function(text, timeoutt)
     SendNUIMessage({
